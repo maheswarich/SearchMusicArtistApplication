@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/parentLayout"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:background="@drawable/gray_rectangle">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/imageViewArtistIcon"
+                android:layout_gravity="left|top|center_vertical"
+                android:scaleType="fitXY"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="5dp" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                >
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/textViewArtistName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="ArtistName"
+                        android:singleLine="true"
+                        android:textAllCaps="true"
+                        android:textSize="14dp"
+                        android:textColor="@color/black"
+                        android:layout_margin="5dp" />
+
+                    <TextView
+                        android:id="@+id/textViewArtistUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="ArtistURL"
+                        android:singleLine="true"
+                        android:textSize="12dp"
+                        android:textColor="@color/black"
+                        android:layout_marginLeft="5dp"
+                        android:autoLink="web"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorPink"/>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/textViewArtistLisCount"
+                android:text="Listeners:"
+                android:layout_weight="1"
+                android:layout_gravity="left|center_vertical"
+                android:gravity="left|center_vertical"
+                android:textSize="12dp"
+                android:textAllCaps="false"
+                android:singleLine="false"
+                android:textColor="@color/black"
+                android:layout_margin="5dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
