@@ -1,26 +1,35 @@
 package com.searchmusicartistapplication;
 
-import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+
 import com.searchmusicartistapplication.HttpCalls.AsyncRequest;
 import com.searchmusicartistapplication.HttpCalls.ServiceCall;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAsyncRequestComplete {
     EditText searchText;
@@ -29,18 +38,27 @@ public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAs
     ArrayList<ArtistInfo> searchArtsiList;
     ArtistAdapter totalAtristAdapter = null,searchArtistAdapter = null;
     Button searchArtistBtn;
+    Retrofit retrofit;
+    RetrofitInterface service;
+
+    public static boolean isOnline(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnected();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initalizeView();
         totalArtistList = new ArrayList<>();
-        getArtistInformation();
+        // getArtistInformation();
+        getRetrofitObject();
          hideSoftKeyboard();
         searchText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            System.out.println("edittext before called");
             }
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -49,8 +67,8 @@ public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAs
                     hideSoftKeyboard();
                     searchList.setVisibility(View.GONE);
                     artsitList.setVisibility(View.VISIBLE);
-                    totalAtristAdapter = new ArtistAdapter(MainActivity.this,totalArtistList);
-                    artsitList.setAdapter(totalAtristAdapter);
+                    //  totalAtristAdapter = new ArtistAdapter(MainActivity.this,totalArtistList);
+                    //  artsitList.setAdapter(totalAtristAdapter);
                 }
             }
 
@@ -66,9 +84,10 @@ public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAs
                 {
                     if(isOnline(MainActivity.this)) {
                         hideSoftKeyboard();
-                        String searchUrl = ServiceCall.BASE_URL+"method=artist.search&artist="+searchText.getText().toString()+"&api_key="+ServiceCall.MUSIC_API_KEY+"&format=json";
-                        AsyncRequest asyncRequest = new AsyncRequest(MainActivity.this, MainActivity.this, "GET", searchUrl, "SEARCH ALL ARTISTS");
-                        asyncRequest.execute();
+                        //  String searchUrl = ServiceCall.BASE_URL+"method=artist.search&artist="+searchText.getText().toString()+"&api_key="+ServiceCall.MUSIC_API_KEY+"&format=json";
+                        //  AsyncRequest asyncRequest = new AsyncRequest(MainActivity.this, MainActivity.this, "GET", searchUrl, "SEARCH ALL ARTISTS");
+                        //  asyncRequest.execute();
+                        getMatchedArtistDetails(searchText.getText().toString());
 
                     }
                     else
@@ -83,6 +102,27 @@ public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAs
             }
         });
     }
+
+    private void getMatchedArtistDetails(String artistname) {
+        Call<RetrofitMatchResponse> call = service.getJsonMatchedResults("artist.search", artistname, ServiceCall.MUSIC_API_KEY, "json");
+        call.enqueue(new Callback<RetrofitMatchResponse>() {
+            @Override
+            public void onResponse(Call<RetrofitMatchResponse> call, Response<RetrofitMatchResponse> response) {
+                List<Artist> matchedList = response.body().getResultMatches().getArtistDetails().getArtistList();
+                searchList.setVisibility(View.VISIBLE);
+                artsitList.setVisibility(View.GONE);
+                RetrofitInfoAdapter totalRetrofitAdapter = new RetrofitInfoAdapter(MainActivity.this, matchedList);
+                searchList.setAdapter(totalRetrofitAdapter);
+            }
+
+            @Override
+            public void onFailure(Call<RetrofitMatchResponse> call, Throwable t) {
+
+            }
+        });
+
+    }
+
     private void getArtistInformation() {
         String artistUrl = ServiceCall.BASE_URL+"method=chart.gettopartists&api_key="+ServiceCall.MUSIC_API_KEY+"&format=json";
         if(isOnline(MainActivity.this)) {
@@ -94,11 +134,32 @@ public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAs
             Toast.makeText(MainActivity.this,"Please check your internet connection here",Toast.LENGTH_SHORT).show();
         }
     }
-    private void initalizeView() {
-        searchText = (EditText)findViewById(R.id.searchArtistText);
-        artsitList = (ListView)findViewById(R.id.artistList);
-        searchList = (ListView)findViewById(R.id.searchList);
-        searchArtistBtn = (Button) findViewById(R.id.searchArtistBtn);
+
+    private void getRetrofitObject() {
+        retrofit = new Retrofit.Builder()
+                .baseUrl(ServiceCall.BASE_URL1)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        service = retrofit.create(RetrofitInterface.class);
+        Call<RetrofitResponse> call = service.getJSON("chart.gettopartists", ServiceCall.MUSIC_API_KEY, "json");
+        call.enqueue(new Callback<RetrofitResponse>() {
+            @Override
+            public void onResponse(Call<RetrofitResponse> call, Response<RetrofitResponse> response) {
+                List<Artist> artsitlist = response.body().getArtistDetails().getArtistList();
+                searchList.setVisibility(View.GONE);
+                artsitList.setVisibility(View.VISIBLE);
+                RetrofitInfoAdapter totalRetrofitAdapter = new RetrofitInfoAdapter(MainActivity.this, artsitlist);
+                artsitList.setAdapter(totalRetrofitAdapter);
+
+            }
+
+            @Override
+            public void onFailure(Call<RetrofitResponse> call, Throwable t) {
+                Log.e("MainActivity ", "  error " + t.toString());
+
+            }
+        });
     }
     @Override
     public void asyncResponse(String response, String flagType) {
@@ -177,13 +238,12 @@ public class MainActivity extends AppCompatActivity implements AsyncRequest.OnAs
      }
 
     }
-    public static boolean isOnline(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnected()) {
-            return true;
-        }
-        return false;
+
+    private void initalizeView() {
+        searchText = findViewById(R.id.searchArtistText);
+        artsitList = findViewById(R.id.artistList);
+        searchList = findViewById(R.id.searchList);
+        searchArtistBtn = findViewById(R.id.searchArtistBtn);
     }
     public void hideSoftKeyboard() {
         getWindow().setSoftInputMode(
